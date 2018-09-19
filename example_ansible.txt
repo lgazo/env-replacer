@@ -1,0 +1,113 @@
+## Brux modules configuration
+
+docker_management_user            : ubuntu
+
+docker_swarm_advertise_address    : 192.168.0.215
+
+docker_registry_domain          : registry.local.seges.sk
+
+##
+## YESELF DOCKER ENVIRONMENT CONFIGURATION
+##
+## Docker bridge IP address :: installed to /etc/sysconfig/docker
+## and it's a Consul IP address for dnsmasq service /etc/dnsmasq.d/*
+ye_docker_bridge_iface_name        : docker0
+ye_docker_bridge_iface_cidr        : 172.17.0.1/24
+ye_docker_bridge_iface_ip          : 172.17.0.1
+ye_docker_bridge_subnet            : 172.17.0.0/24
+##
+##
+ye_docker_registry_name            : registry.local.seges.sk/
+ye_docker_registry_domain          : registry.local.seges.sk
+
+##
+## Consul DNS IP address and port (exposed)
+ye_docker_consul_iface_ip          : 172.17.0.1
+ye_docker_consul_dns_port          : 53
+ye_docker_consul_dns_search        : service.consul
+##
+##
+
+# it is used to contact specific Docker Host to perform setup procedure within application's first time setup (role: application-first-time)
+ye_setup_procedure_docker_host     : "unix:///var/run/docker.sock"
+
+# Defines application environment type especially important when multiple environments live in one Docker environment. Example: different directory per application environment is created for Docker volumes
+ye_app_environment: cloud-int
+
+ye_app_guide_server_version        : 1.18.0.656f5b1
+ye_app_client_version              : 1.18.0.656f5b1
+ye_app_logger_server_version       : 1.18.0.656f5b1
+# ye_app_expert_server_version       : 1.18.0.656f5b1
+ye_app_confusion_server_version    : 2.3.15.264261ae
+ye_app_docs_version                : 1.18.0.db354c5
+ye_app_help_corner_version         : 1.18.0.db354c5
+ye_app_api_gw_data_version         : 1.18.0
+ye_app_web_proxy_version           : 1.11.0
+ye_app_ca_selfsigned_version       : 1.11.0
+ye_app_couchbase_config_version    : 1.11.9
+ye_app_iam_config_version          : 1.11.9
+
+### start DEV TOOLS ###
+ye_app_jupyter_server_version      : 1.18.0
+### end DEV TOOLS ###
+
+ye_app_client_guide_model_version  : 1.15.0
+
+
+####### Web Proxy
+
+ye_standalone_edge_proxy           : false
+
+# a list of users allowed to access administration interfaces (like Kibana, KeyCloak, CouchBase DB web). Translates to edge proxy mechanism (e.g. https://proxy.dockerflow.com/usage/#http-mode-query-parameters -> users). Using hashed passwords (usersPassEncrypted = true) and therefore it has to be created with command e.g. mkpasswd -m sha-512 password1 
+# vaulted -> ye_app_admin_interfaces_users              : tulkas
+
+# name of a variable of docker secret that holds edge proxy administration interface user passwords (e.g. https://proxy.dockerflow.com/usage/#http-mode-query-parameters -> usersSecret). Not used at the moment because corresponding code is commented because docker flow proxy somehow does not accept secrets from docker secrets storage although it is said so in doc
+ye_app_admin_interfaces_global_secrets_var : yeself_{{ ye_app_environment }}_app_admin_interfaces_global_secrets
+
+ye_app_publish_http_port           : 80
+ye_app_publish_https_port          : 443
+ye_app_client_domain               : yeself-{{ ye_app_environment }}.app.brux.space
+ye_app_client_service_path         : /
+ye_app_api_domain                  : yeself-{{ ye_app_environment }}.app.brux.space
+ye_app_api_service_path            : /api
+## proxy path rewrite https://proxy.dockerflow.com/usage/#http-mode-query-parameters; it should 
+ye_app_api_reqPathSearchReplace    : /api,
+## for compatibility reasons with previous Docker Flow Proxy versions https://proxy.dockerflow.com/usage/#http-mode-query-parameters
+ye_app_api_reqPathSearch           : /api
+ye_app_api_reqPathReplace          :
+## https://www.nginx.com/blog/http-strict-transport-security-hsts-and-nginx/ && https://www.owasp.org/index.php/HTTP_Strict_Transport_Security_Cheat_Sheet
+ye_app_web_proxy_hsts_maxage       : 86400
+
+ye_app_docs_domain                 : yeself-{{ ye_app_environment }}-docs.app.brux.space
+ye_app_docs_service_path           : /
+ye_app_help_corner_domain          : yeself-{{ ye_app_environment }}-help-corner.app.brux.space
+ye_app_help_corner_service_path    : /
+
+ye_app_db_web_domain               : yeself-{{ ye_app_environment }}-db.app.brux.space
+ye_app_db_web_service_path         : /
+
+ye_app_analytics_web_domain        : yeself-{{ ye_app_environment }}-analytics-web.app.brux.space
+ye_app_analytics_web_service_path  : /
+
+# KeyCloak IAM
+ye_app_iam_domain                  : yeself-{{ ye_app_environment }}-iam.app.brux.space
+ye_app_iam_service_path            : /
+## used by iam-config image to connect to IAM
+ye_app_keycloak_url                : http://yeself-iam.service.consul:8080
+ye_app_keycloak_realm_root_url     : https://yeself-{{ ye_app_environment }}.app.brux.space
+ye_app_keycloak_realm_redirect_uri : https://yeself-{{ ye_app_environment }}.app.brux.space/yeself/*
+ye_app_keycloak_auth_server_url    : https://{{ ye_app_iam_domain }}{{ ye_app_iam_service_path }}auth
+
+# YesElf Client Configuration
+ye_app_client_installation_path    : https:\/\/{{ ye_app_client_domain }}:443\/
+ye_app_client_config               : 'API_URL: "https:\/\/{{ ye_app_api_domain }}:443{{ ye_app_api_service_path | replace("/", "\/") }}",API_AGENT_SLUG: "yeself-agent",API_MANAGE_SLUG: "yeself-manage",API_PUBLIC_SLUG: "yeself-public", CONSOLE_URL: "https:\/\/{{ ye_app_client_domain }}:443\/console\/", EDITOR_URL: "https:\/\/{{ ye_app_client_domain }}:443", INSTALLATION_PATH: "{{ ye_app_client_installation_path }}", OPEN_ID: { authority: "https:\/\/{{ ye_app_iam_domain }}:443{{ ye_app_iam_service_path | replace("/", "\/") }}auth\/realms\/yeself", client_id: "yeself", token_endpoint: "\/protocol\/openid-connect\/token", userinfo_endpoint: "\/protocol\/openid-connect\/userinfo" }, MODEL_VERSION: { "guide": "{{ ye_app_client_guide_model_version }}" }'
+
+### DEV TOOLS ###
+
+# when set to 0, no DEV tools will be deployed
+ye_app_dev_tools_replicas   : 1
+# Jupyter Dev server publishing parameters
+ye_app_jupyter_domain       : yeself-{{ ye_app_environment }}-jupyter.app.brux.space
+ye_app_jupyter_service_path : /
+
+ye_app_public_facing_certificate_testing : true
